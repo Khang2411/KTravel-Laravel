@@ -8,10 +8,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Listing extends Model
 {
     use HasFactory;
+    use SoftDeletes;
+
     protected $fillable = [
         'category_id', 'host_id', 'privacy_id', 'name', 'thumbnail', 'neighbourhood', 'latitude', 'longtitude',
         'price', 'adult', 'child', 'minimum_nights', 'number_of_reviews', 'new_discount', 'weekly_discount',

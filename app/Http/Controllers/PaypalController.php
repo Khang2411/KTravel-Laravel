@@ -6,12 +6,12 @@ use App\Models\Order;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
+use App\Jobs\SendOrderMail;
 
 class PaypalController extends Controller
 {
     public function payment(Request $request)
     {
-        return $request->price;
         $provider = new PayPalClient;
         $provider->setApiCredentials(config('paypal'));
         $paypalToken = $provider->getAccessToken();
@@ -71,13 +71,13 @@ class PaypalController extends Controller
             'payment_id' => $orderPayment['id'],
             'payer_id' => $orderPayment['payer']['payer_id'],
             'payer_email' => $orderPayment['payer']['email_address'],
-            'payer_name' => $orderPayment['payer']['name']['given_name'].' '.$orderPayment['payer']['name']['surname'],
+            'payer_name' => $orderPayment['payer']['name']['given_name'] . ' ' . $orderPayment['payer']['name']['surname'],
             'currency' => $orderPayment['purchase_units'][0]['payments']['captures'][0]['amount']['currency_code'],
             'payment_status' => $orderPayment['status'],
             'payment_method' => 'paypal'
         ]);
 
-        Order::create([
+        $order = Order::create([
             'user_id' => $request->user_id,
             'host_id' => $request->host_id,
             'listing_id' => $request->listing_id,
@@ -93,6 +93,7 @@ class PaypalController extends Controller
         ]);
 
         if (isset($orderPayment['status']) && $orderPayment['status'] == "COMPLETED") {
+            SendOrderMail::dispatch($order);
             return redirect(env('PAYPAL_RETURN'));
         } else {
             return redirect()->route('checkout.paypal.cancel');
