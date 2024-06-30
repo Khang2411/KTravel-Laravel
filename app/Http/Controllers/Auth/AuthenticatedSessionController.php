@@ -31,24 +31,12 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        // $request->authenticate();
+        $user = User::where('email', request()->email)->first();
 
-        // $request->session()->regenerate();
-
-        // return redirect()->intended(RouteServiceProvider::HOME);
-
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required'],
-        ]);
-
-        $user = User::where('email', $request->email)->first();
         if ($user->role_id) {
-            if (Auth::attempt($credentials)) {
+                $request->authenticate();
                 $request->session()->regenerate();
-
-                return redirect()->intended('dashboard');
-            }
+                return redirect()->intended(RouteServiceProvider::HOME);
         }
 
         return back()->withErrors([
