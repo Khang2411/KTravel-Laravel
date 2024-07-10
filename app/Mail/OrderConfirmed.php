@@ -2,12 +2,14 @@
 
 namespace App\Mail;
 
+use App\Models\Order;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Mail\Mailables\Address;
 
 class OrderConfirmed extends Mailable
 {
@@ -16,10 +18,10 @@ class OrderConfirmed extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct()
-    {
-        //
-    }
+    public function __construct(
+        public Order $order,
+    ) {}
+
 
     /**
      * Get the message envelope.
@@ -27,7 +29,8 @@ class OrderConfirmed extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Order Confirmed',
+            from: new Address('datns2160th12024@gmail.com', 'KTravel'),
+            subject: 'KTravel Xác nhận đặt phòng.',
         );
     }
 
@@ -37,7 +40,7 @@ class OrderConfirmed extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'view.name',
+            view: 'mail.order',
         );
     }
 

@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Api\v1\AuthController;
 use App\Http\Controllers\PaypalController;
 use App\Models\Address;
 use App\Models\Amenity;
@@ -9,8 +8,6 @@ use App\Models\Listing;
 use App\Models\ListingImage;
 use App\Models\Order;
 use App\Models\Privacy;
-use App\Models\Room;
-use App\Models\Test;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Validator;
@@ -26,7 +23,9 @@ use App\Models\Message;
 use App\Models\MessageContent;
 use App\Models\Wishlist;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
 
 Configuration::instance('cloudinary://892774692195329:XMDRLriA45tFiLsegzoMwCrlTok@dqsfwus9c?secure=true');
 
@@ -674,4 +673,50 @@ Route::prefix('v1')->group(function () {
         $response = ['updateUser' => $statusCode];
         return response()->json(["data" => $response]);
     });
+
+    Route::post('/forgot-password', function () {
+        request()->validate([
+            'email' => 'required|email',
+        ]);
+
+        $status = Password::sendResetLink(
+            request()->only('email')
+        );
+
+        if ($status == Password::RESET_LINK_SENT) {
+            return back()->with('status', __($status));
+        }
+
+        throw ValidationException::withMessages([
+            'email' => [trans($status)],
+        ]);
+    });
+
+    Route::post('/reset-password', function (Request $request) {
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => 'required|min:8|confirmed',
+        ]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function (User $user, string $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password)
+                ])->setRememberToken(Str::random(60));
+
+                $user->save();
+
+                event(new PasswordReset($user));
+            }
+        );
+        if ($status == Password::PASSWORD_RESET) {
+            return true;
+        }
+
+        throw ValidationException::withMessages([
+            'email' => [trans($status)],
+        ]);
+    })->middleware('guest')->name('password.update');
 });
